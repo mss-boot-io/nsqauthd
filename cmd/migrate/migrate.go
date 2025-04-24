@@ -9,9 +9,9 @@ import (
 	"github.com/mss-boot-io/mss-boot/pkg/migration/models"
 	"github.com/spf13/cobra"
 
-	_ "service-http/cmd/migrate/migration/custom"
-	_ "service-http/cmd/migrate/migration/system"
-	"service-http/config"
+	_ "nsqauthd/cmd/migrate/migration/custom"
+	_ "nsqauthd/cmd/migrate/migration/system"
+	"nsqauthd/config"
 )
 
 /*
@@ -65,6 +65,7 @@ func migrate() error {
 		return err
 	}
 	migration.Migrate.SetDb(db)
+	migration.Migrate.SetModel(&models.Migration{})
 	migration.Migrate.Migrate()
 	return err
 }

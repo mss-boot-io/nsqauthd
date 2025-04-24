@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [linux, windows, darwin]
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.8.0
+        with:
+          redis-version: 7
+      - name: Install dependencies
+        run: make deps
+      - name: Unit Test
+        run: make test
+      - name: Build
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o admin
+      - name: Windows
+        if: matrix.os == 'windows'
+        run: mv admin admin.exe
+      - name: Archive artifact
+        if: matrix.os != 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            admin
+            public
+            config/*.yml
+      - name: Archive artifact
+        if: matrix.os == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            admin.exe
+            public
+            config/*.yml
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+
+      - name: Get latest release version
+        id: get_release
+        run: |
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/mss-boot-io/mss-boot-admin-antd/releases/latest)
+          VERSION=$(echo $LATEST_RELEASE | jq -r '.tag_name')
+          echo "LATEST_RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Download dist-local.tar.gz
+        run: |
+          wget https://github.com/mss-boot-io/mss-boot-admin-antd/releases/download/${{ env.LATEST_RELEASE_VERSION }}/dist-local.tar.gz
+          tar -zxvf dist-local.tar.gz
+          cp -r dist admin-linux-amd64/
+          cp -r dist admin-linux-arm64/
+          cp -r dist admin-darwin-amd64/
+          cp -r dist admin-darwin-arm64/
+          cp -r dist admin-windows-amd64/
+          cp -r dist admin-windows-arm64/
+
+      - name: Package
+        run: |
+          zip -r admin-linux-amd64.zip admin-linux-amd64
+          zip -r admin-linux-arm64.zip admin-linux-arm64
+          zip -r admin-darwin-amd64.zip admin-darwin-amd64
+          zip -r admin-darwin-arm64.zip admin-darwin-arm64
+          zip -r admin-windows-amd64.zip admin-windows-amd64
+          zip -r admin-windows-arm64.zip admin-windows-arm64
+
+      - name: Get version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          files: |
+            admin-linux-amd64.zip
+            admin-linux-arm64.zip
+            admin-darwin-amd64.zip
+            admin-darwin-arm64.zip
+            admin-windows-amd64.zip
+            admin-windows-arm64.zip
+          prerelease: false
+          body: |
+            ## Pull Image
+            ```shell
+            docker pull ghcr.io/${{ github.repository }}:${{ steps.get_version.outputs.VERSION }}
+            ```
+            

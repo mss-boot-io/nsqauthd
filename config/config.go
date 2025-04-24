@@ -22,6 +22,7 @@ type Config struct {
 	Server   config.Listen    `yaml:"server" json:"server"`
 	Database *gormdb.Database `yaml:"database" json:"database"`
 	Logger   config.Logger    `yaml:"logger" json:"logger"`
+	TTL      int              `yaml:"ttl" json:"ttl"`
 }
 
 func (e *Config) Init() {

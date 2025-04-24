@@ -6,12 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mss-boot-io/mss-boot/core/server"
 	"github.com/mss-boot-io/mss-boot/core/server/listener"
-	"github.com/mss-boot-io/mss-boot/virtual/action"
 	"github.com/spf13/cobra"
-	"service-http/config"
-	"service-http/models"
 
-	"service-http/router"
+	"nsqauthd/config"
+	"nsqauthd/router"
 )
 
 /*
@@ -25,8 +23,8 @@ var (
 	StartCmd = &cobra.Command{
 		Use:     "server",
 		Short:   "start server",
-		Long:    "start service-http server",
-		Example: "service-http server",
+		Long:    "start nsqauthd server",
+		Example: "nsqauthd server",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return setup()
 		},
@@ -45,18 +43,10 @@ func setup() error {
 
 	runnable := []server.Runnable{
 		config.Cfg.Server.Init(
-			listener.WithName("service-http"),
+			listener.WithName("nsqauthd"),
 			listener.WithHandler(r)),
 	}
 
-	// init virtual models
-	ms, err := models.GetModels()
-	if err != nil {
-		return err
-	}
-	for i := range ms {
-		action.SetModel(ms[i].Path, ms[i].MakeVirtualModel())
-	}
 	server.Manage.Add(runnable...)
 
 	return nil

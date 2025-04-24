@@ -1,5 +1,5 @@
 server:
-  addr: :8888
+  addr: :4181
   metrics: true
   healthz: true
   readyz: true
@@ -14,5 +14,22 @@ logger:
   # 日志格式 json json格式
   json: false
 database:
-  driver: mysql
-  source: 'root:123456@tcp(127.0.0.1:3306)/service-http?charset=utf8&parseTime=True&loc=Local&timeout=1000ms'
+  driver: sqlite
+  source: 'nsqauthd.db'
+  name: nsqauthd
+  config:
+    disableForeignKeyConstraintWhenMigrating: true
+  casbinModel: |
+    [request_definition]
+    r = sub, tp, obj, act
+
+    [policy_definition]
+    p = sub, tp, obj, act
+
+    [policy_effect]
+    e = some(where (p.eft == allow))
+
+    [matchers]
+    m = r.sub == p.sub && r.tp == p.tp && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
+  timeout: 10s
+ttl: 3600

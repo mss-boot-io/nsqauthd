@@ -16,15 +16,15 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "service-http/apis"
-	_ "service-http/docs"
+	_ "nsqauthd/apis"
+	_ "nsqauthd/docs"
 )
 
 func Init(r *gin.RouterGroup) {
-	v1 := r.Group("/api")
+	v1 := r.Group("/")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	configCors := cors.DefaultConfig()
-	configCors.AllowOrigins = []string{"http://localhost:3000"}
+	configCors.AllowOrigins = []string{"*"}
 	configCors.AllowCredentials = true
 	configCors.AddAllowHeaders("Authorization")
 	v1.Use(cors.New(configCors))
@@ -33,7 +33,7 @@ func Init(r *gin.RouterGroup) {
 	})
 
 	for i := range response.Controllers {
-		response.Controllers[i].Other(r.Group("/api", cors.New(configCors)))
+		response.Controllers[i].Other(r.Group("/", cors.New(configCors)))
 		e := v1.Group(response.Controllers[i].Path(), response.Controllers[i].Handlers()...)
 		if action := response.Controllers[i].GetAction(response.Get); action != nil {
 			e.GET("/:"+response.Controllers[i].GetKey(), action.Handler()...)

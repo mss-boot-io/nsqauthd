@@ -1,9 +1,64 @@
+definitions:
+  dto.AuthAccount:
+    properties:
+      channels:
+        items:
+          type: string
+        type: array
+      permissions:
+        items:
+          type: string
+        type: array
+      topic:
+        type: string
+    type: object
+  dto.AuthResp:
+    properties:
+      authorizations:
+        items:
+          $ref: '#/definitions/dto.AuthAccount'
+        type: array
+      identity:
+        type: string
+      message:
+        type: string
+      ttl:
+        type: integer
+    type: object
 info:
   contact: {}
-  description: service-http接口文档
-  title: service-http API
+  description: nsqauthd接口文档
+  title: nsqauthd API
   version: 0.0.1
-paths: {}
+paths:
+  /auth:
+    get:
+      consumes:
+      - application/json
+      description: authenticate
+      parameters:
+      - description: secret
+        in: query
+        name: secret
+        required: true
+        type: string
+      - description: remote_ip
+        in: query
+        name: remote_ip
+        required: true
+        type: string
+      - description: tls
+        in: query
+        name: tls
+        type: boolean
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResp'
+      summary: authenticate
+      tags:
+      - auth
 securityDefinitions:
   Bearer:
     in: header
