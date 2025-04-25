@@ -17,19 +17,5 @@ database:
   driver: sqlite
   source: 'nsqauthd.db'
   name: nsqauthd
-  config:
-    disableForeignKeyConstraintWhenMigrating: true
-  casbinModel: |
-    [request_definition]
-    r = sub, tp, obj, act
-
-    [policy_definition]
-    p = sub, tp, obj, act
-
-    [policy_effect]
-    e = some(where (p.eft == allow))
-
-    [matchers]
-    m = r.sub == p.sub && r.tp == p.tp && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
   timeout: 10s
 ttl: 3600
